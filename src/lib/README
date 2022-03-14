@@ -1,0 +1,26 @@
+# $Id:$
+#
+# Copyright (c) 2015, Juniper Networks, Inc.
+# All rights reserved.
+#
+
+* Under lib/ dir, create subdir for developing C/C++ libraries.
+  - mkdir $SB/src/lib/libfoo/
+
+* Developing the C/C++ Library
+
+ - cd $SB/src/lib
+ - create subdir for application library (eg: libfoo)
+
+ - Develop the code under $SB/src/lib/libfoo
+ - Auto-generate library Makefile or write manually.
+   Write JSON file for auto-generating app Makefile and packaging related files.
+   (see how-to-write-package-json-file for more details)
+   NOTE: The auto-generated app Makefile will be correct for most of the general
+   cases; if there are any external library depedencies, it should be tweaked accordingly.
+ - Run 'mk' and build the lib alone for quick testing.
+   Eg: cd $SB/src/lib/libfoo; mk
+   NOTE: The object files can be found here: $SB/junos-jet-sb-obj/<machine>/lib/libfoo
+   OR $SB/junos-jet-sb-obj/bsd10/<machine>/lib/libfoo (for bsd10 occam builds)
+
+

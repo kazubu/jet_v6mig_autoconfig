@@ -1,0 +1,45 @@
+#
+# Makefile.template for python 
+# copy this file as Makefile in <app> sub directory and make changes.
+#
+
+#
+# The top level SRC path for this module
+#
+SRC_DIR = ${RELSRCTOP}/python/@app_subdir@
+.PATH: ${SB}/src/python/@app-subdir@
+
+#
+# the python package name
+#
+PYTHON_PKG_NAME=@app-subdir@
+
+# configure where the modules and scripts are based
+PYTHON_MODULE_BASE=${SRC_DIR}
+PYTHON_SCRIPT_BASE=${SRC_DIR}
+
+
+# only consider the sub path.
+PYTHON_MODULE_SRCS_SUBPATH ?= @subdir_where_srcs_reside@ OR @.@
+
+#
+# Extension modules if any 
+#
+PYTHON_EXT_NAMES+=
+PYTHON_EXT_SRCS_@src-filename@ = @src-file-path@
+PYTHON_EXT_LDADD_@src-filename@ = @list-of-dependent-libs@
+
+
+#
+# Scripts to publish if any.
+#
+PYTHON_SCRIPTS = 
+
+CFLAGS += @list-of-any-additional-cflags@
+LDFLAGS += @list-of-library-flags@
+
+# support tools
+.include <bsd.python.mk>
+
+# NOTE: above @something@ should be removed and proper value should be given,
+# if nothing to be added, remove it and leave the variable value empty.

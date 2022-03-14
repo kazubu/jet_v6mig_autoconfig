@@ -1,0 +1,66 @@
+# $Id:$
+#
+#  Deploy JET app package on JUNOS box
+#
+# Copyright (c) 2015, Juniper Networks, Inc.
+# All rights reserved.
+#
+
+Procedure to deploy JET app package on JUNOS box
+  - Copy the generated app package to JUNOS box.
+  - If the app package is unsigned, run below command and the package gets installed.
+        From cli> request system software add <app-package>.tgz
+
+  - If the app package is signed, configure #set system extension provider <key>; and commit.
+  - Run >request system software add <app-package>.tgz from cli; and the package validates
+    the certs bundled on the box with configured key, if matches, packages gets installed.
+
+    Eg:
+    Configure provider keys(for signed app package):
+    regress@choc-mx480-b# show system
+    extensions {
+        providers {
+             juniperftsdksystest {
+                license-type juniper deployment-scope
+    [ commercial private ];
+            }
+        }
+    }
+
+    Eg: Installation of sample echoclient app package:
+    Install the app package:
+    % cli
+    {master}
+    regress@mybox> request system software add echoclient-15.2R1.1.tgz
+    NOTICE: Validating configuration against echoclient-15.2R1.1.tgz.
+    NOTICE: Use the 'no-validate' option to skip this if desired.
+    Installing package '/var/home/regress/echoclient-15.2R1.1.tgz' ...
+    Verified echoclient-15.2R1.1 signed by juniperftsdksystest-testing-private-1
+    juniperftsdksystest
+    Please check system extensions, deployment-scope configuration for correctness
+    Mounted echoclient package on /dev/md17...
+    Saving package file in /var/sw/pkg/echoclient-15.2R1.1.tgz ...
+    Saving state for rollback ...
+
+    {master}
+    regress@mybox>
+
+    The app is installed:
+    regress@mybox> show version
+    ..
+    ..
+    JET echoserver example Application [15.1I20150115_1409_root]
+
+
+    regress@mybox% ls /var/db/scripts/jet/
+    echoclientd
+    regress@mybox%
+
+    Run the app
+    root@choc-mx480-b1% /var/db/scripts/jet/echoclientd
+    Usage: /var/db/scripts/jet/echoclientd <addr> <msg>
+
+  If the app is python script:
+  Configure the script # set system scripts jet file <app>.py
+  Run from cli> request system services extension-service application start <app>.py
+

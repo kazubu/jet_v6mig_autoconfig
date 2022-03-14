@@ -1,0 +1,24 @@
+# $Id:$
+#
+# Build the JET app package
+#
+# Copyright (c) 2015, Juniper Networks, Inc.
+# All rights reserved.
+#
+
+Procedure to build the JET app package
+  - After development of the app completes and all Makefile/manifest are ready,
+    the app can be built and packaged.
+  - cd <sandbox-path>/src/
+  - Run: mk <app-name> (eg: mk echoclient)
+    NOTE: Default mk will built for target i386; to build for other platforms,
+    run mk-<arch> (eg: mk-powerpc, mk-octeon)
+  - The app will be compiled and app package (.tgz file) gets generated in
+    /home/<user>/workspace/mysampleapp/junos-jet-sb-obj/ship/ path.
+
+  Eg: After building the echoclient sample app, the package is generated in below path:
+  [root@myvm ~]# cd/home/<user>/workspace/mysampleapp/junos-jet-sb-obj/ship>ls
+  echoclient-15.2R1.1.tgz
+  echoclient-15.2R1.1tgz.sha1
+
+

@@ -1,0 +1,26 @@
+SB_BASE=${SB_BASE:-/home/kshimizu/work/jet}; export SB_BASE
+SB=${SB:-$SB_BASE/v6mig_autoconfig}; export SB
+SB_NAME=`basename $SB`; export SB_NAME
+BSB_NAME="21.4R1.12"; export BSB_NAME
+HABTOOLS="/usr/local/junos-jet/21.4R1.12/../toolchain"; export HABTOOLS
+FWTOOLS_PREFIX="/usr/local/junos-jet/21.4R1.12/../toolchain"; export FWTOOLS_PREFIX
+OBJDIR='${SB_OBJPREFIX}${MACHINE_ARCH}'; export OBJDIR
+OBJTOP='${SB}/${OBJDIR}'; export OBJTOP
+MAKEOBJDIR='${.CURDIR:S,${SB_SRC},${OBJTOP},}'; export MAKEOBJDIR
+SB_OLD_PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/usr/local/junos-jet/21.4R1.12/junos-jet-sb/bin:/usr/local/junos-jet/21.4R1.12/junos-jet-sb/bin:/usr/local/junos-jet/21.4R1.12/junos-jet-sb/bin"; export SB_OLD_PATH
+SB_SRC="${SB}/src"; export SB_SRC
+SB_BACKING_SB="/usr/local/junos-jet/21.4R1.12/junos-jet-sb"; export SB_BACKING_SB
+SB_OBJPREFIX="junos-jet-sb-obj/"; export SB_OBJPREFIX
+SB_OBJROOT="${SB}/${SB_OBJPREFIX}"; export SB_OBJROOT
+MAKESYSPATH="${SB}/src/pkgs/mk:${SB}/src/share/mk:${SB_BACKING_SB}/src/build/mk"; export MAKESYSPATH
+SB_OBJTOP='${SB}/${SB_OBJPREFIX}${MACHINE_ARCH}'; export SB_OBJTOP
+OBJTOP='${SB}/${OBJDIR}'; export OBJTOP
+SB_PRE_PATH="${SB}/bin:/usr/local/junos-jet/21.4R1.12/junos-jet-sb/bin"; export SB_PRE_PATH
+SB_PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/usr/local/junos-jet/21.4R1.12/junos-jet-sb/bin:/usr/local/junos-jet/21.4R1.12/junos-jet-sb/bin:/usr/local/junos-jet/21.4R1.12/junos-jet-sb/bin"; export SB_PATH
+PATH=${SB_PRE_PATH}${SB_PRE_PATH:+:}$SB_PATH; export PATH
+CERTSDIR="/usr/local/junos-jet/21.4R1.12/../certs"; export CERTSDIR
+SIGKEY="/usr/local/junos-jet/21.4R1.12/../certs/juniper-jnprjp-private-1_key.pem"; export SIGKEY
+SIGCERT="/usr/local/junos-jet/21.4R1.12/../certs/juniper-jnprjp-private-1.pem"; export SIGCERT
+NOSIG="yes"; export NOSIG
+UNSIGNED_ENV="yes"; export UNSIGNED_ENV
+# mksb Finished

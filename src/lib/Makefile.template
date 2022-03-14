@@ -1,0 +1,18 @@
+#
+# Makefile.template for library
+# copy this file as Makefile in <app> sub directory and make changes.
+#
+
+
+LIB = @libname@
+
+SHLIB_MAJOR = 1
+
+SRCS = @list-of-src-files@
+
+CFLAGS += @list-of-any-additional-cflags@
+
+.include <bsd.lib.mk>
+
+# NOTE: above @something@ should be removed and proper value should be given,
+# if nothing to be added, remove it and leave the variable value empty.

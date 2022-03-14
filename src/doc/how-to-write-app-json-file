@@ -1,0 +1,284 @@
+# $Id:$
+#
+# Writing JSON file for JET App Build/Packaging.
+#
+# Copyright (c) 2015, Juniper Networks, Inc.
+# All rights reserved.
+#
+
+After creating development sandbox(see jet-app-develop-start-guide) and
+app development is complete, write the app JSON file describing
+the content to be built and packaged for deploying the app on-box.
+
+The tool generates app Makefile (if not present) and necesery Makefile/manifest
+files for packaging the app.
+
+Entire content should be part of one dictionary.
+{
+    [ app details should go here ]
+}
+
+* The app JSON file *must* contain below sections:
+  -  "app-name"
+     Specify name of the app.
+     eg:"app-name": "sample_pyapp",
+
+  - "app-path"
+    Specify the path to app implementation dir.
+    All paths should relative to sandbox src/.
+    eg:"app-path": "python/sample_pyapp",
+
+  - "language"
+    Specify the langauge used for developing the app. Eg:python or c or c++.
+    eg: "language": "python",
+
+  - "main-scripts"
+    Specify the main script(one or more), which will run on the box (don't specify module here).
+    The main-scripts file will be deployed under /var/db/scripts/jet path on-box.
+    eg:"main-scripts": ["samplerun.py"],
+    NOTE: Mandatory for Python apps. Can be ignored for c/c++ apps.
+
+  - "app-type"
+    Specify whether app will be as "standalone" or "daemon"
+    eg:"app-type": "standalone",
+
+  - "sign"
+    Indicates whether to sign the app or not. eg: "yes" or "no"
+    eg:"sign": "no",
+
+  - "os-type"
+    Specify whether app will be deployed on Legacy JUNOS (bsd6) or Occam JUNOS (bsd10) eg: "bsd6" or "bsd10"
+    eg:"os-type": "bsd6",
+
+  - "target-arch":
+    Specify target architecture where app would be deployed. (i386, powerpc, octeon) eg: "i386" or "powerpc" or "octeon" or "xlr"
+    eg:"target-arch": "i386",
+
+  - "description":
+    Specify brief description about the app. This will be displayed in 'show version' o/p.
+    eg: "description": "Simple Python test app",
+
+
+    Eg: Simple app JSON file
+    {
+      "app-name": "sample_pyapp",
+      "app-path": "python/sample_pyapp",
+      "language": "python",
+      "main-scripts": ["samplerun.py"],
+      "app-type": "standalone",
+      "sign": "no",
+      "os-type": "bsd6",
+      "target-arch": "i386",
+      "description": "Simple Python test app"
+    }
+
+
+* The package JSON file can contain below optional sections:
+  - "srcs":
+    Specify the list of additional source files.
+    For python -> The additional module files.
+    For C/C++ -> The source files to be compiled to generate lib/binary.
+    Each entry should be a key-value pair, where 'key' is the path of the source files.
+    and 'value' is the array of source file names.
+    eg:
+    "srcs": {
+      "python/sample_pyapp": ["a.py", "b.py"],
+      "python/sample_pyapp/temp": ["temp1.py", "temp2.py"]
+    }
+
+  - "extn-srcs":
+    This section is applicable only for python.
+    Specify list of .c/.c++ module files to be compiled.
+    Each entry should be a key-value pair, where 'key' is the path of the source files.
+    and 'value' is the array of source file names.
+    eg:
+    "extn-srcs": {
+      "python/sample_pyapp": ["foo.c", "bar.c"],
+      "python/sample_pyapp/temp": ["1.cpp", "2.cpp"]
+    }
+
+    Eg: Python app with additional module files to be deployed along with main-script.
+    {
+      "app-name": "sample_pyapp",
+      "app-path": "python/sample_pyapp",
+      "language": "python",
+      "main-scripts": ["samplerun.py"],
+      "app-type": "standalone",
+      "sign": "no",
+      "os-type": "bsd6",
+      "target-arch": "i386",
+      "description": "Simple Python test app",
+  
+      "srcs": {
+        "python/sample_pyapp": ["a.py", "b.py"],
+        "python/sample_pyapp/temp": ["temp1.py", "temp2.py"]
+      },
+
+      "extn-srcs": {
+        "python/sample_pyapp": ["foo.c", "bar.c"],
+        "python/sample_pyapp/temp": ["1.cpp", "2.cpp"]
+      }
+    }
+
+  - "dep-libs"
+    dep-libs section will contain any dependent libraries which
+    need to be compiled and the generated <lib>.so to be packaged along with app.
+    dep-libs section is a array, where we can specify multiple library dependencies.
+    Each section under dep-libs is a dictionary with below sections:
+      - lib-name: Name of the library.
+      - lib-path: The path of the library source code in dev sandbox.
+      - srcs: This is a dictionary, with key-value as path and list of source files.
+
+    eg:
+    "dep-libs": [
+      {
+        "lib-name": "xyz",
+        "lib-path": "lib/xyz",
+        "srcs": {
+          "lib/xyz": ["foo.c", "bar.c"]
+        }
+      }
+      ]
+
+  - "dep-py-modules"
+    dep-py-modules section is applicable only for python apps.
+    This section will contain any dependent python modules which
+    need to be compiled and packaged along with app.
+    dep-py-modules section is a array, where we can specify multiple python
+    module  dependencies.
+    Each section under dep-py-modules is a dictionary with below sections:
+      - py-module-name: Name of the python module.
+      - py-module-path: The path of the python module source code in dev sandbox.
+      - srcs: This is a dictionary, with key-value as path and list of source files.
+      - extn-srcs: This is a dictionary, with key-value as path and list of python extension source files.
+
+    eg:
+    "dep-py-modules": [
+      {
+        "py-module-name": "module_a",
+        "py-module-path": "python/module_a",
+        "srcs": {
+          "python/module_a": ["foo.py", "bar.py"]
+        },
+        "extn-srcs": {
+          "python/module_a": ["foo.c", "bar.c"],
+          "python/module_a/sub_mod": ["lmn.cpp"]
+        }
+      }
+      ]
+
+  - "server-extensions"
+    To add any server side implementation script, specify in this section.
+    The server-extensions scripts will be deployed under /var/db/scripts/jet/server-extension path on-box.
+    eg:"server-extensions": ["sample.py"],
+    NOTE: If server-extensions defined, main-scripts is not mandatory. But both also can be defined.
+    eg: "server-extensions": "server-extn.py"
+
+  - "server-extension-path"
+    Specify the path where server extension scripts are added in the sandbox.
+    All paths should relative to sandbox src/.
+    eg: "server-extension-path": "python/server_extension"
+
+  - "c-compiler-flags"
+    Specify the list of c compiler flags if any.
+    This flag can be defined in main app section and dependent modules sections as well.
+    eg: "c-compiler-flags": "<flags>",
+
+  - "c++-compiler-flags"
+    Specify the list of c++ compiler flags if any.
+    This flag can be defined in main app section and dependent modules sections as well.
+    eg: "c++-compiler-flags": "<flags>",
+
+  - "linker-flags"
+    Specify the list of linker flags if any. Any addtional libraries to link with.
+    This flag can be defined in main app section and dependent modules sections as well.
+    eg: "linker-flags": "<flags>",
+
+* Example App JSON file showing all sections:
+
+  -------------------------------------------------
+  {
+    "app-name": "sample_pyapp",
+    "app-path": "python/sample_pyapp",
+    "language": "python",
+    "main-scripts": ["samplerun.py"],
+    "app-type": "standalone",
+    "sign": "no",
+    "os-type": "bsd6",
+    "target-arch": "i386",
+    "description": "Simple Python test app",
+    "server-extensions": ["server-extn.py"],
+    "server-extension-path": "python/extn",
+    "c-compiler-flags": "-DSOMEMACRO",
+    "c++-compiler-flags": "-DSOMEMACRO",
+    "linker-flags": "-lfoo",
+
+    "srcs": {
+      "python/sample_pyapp": ["a.py", "b.py"],
+      "python/sample_pyapp/temp": ["temp1.py", "temp2.py"]
+    },
+
+    "extn-srcs": {
+      "python/sample_pyapp": ["foo.c", "bar.c"],
+      "python/sample_pyapp/temp": ["1.cpp", "2.cpp"]
+    },
+
+    "dep-libs": [
+      {
+        "lib-name": "xyz",
+        "lib-path": "lib/xyz",
+        "srcs": {
+          "lib/xyz": ["foo.c", "bar.c"]
+        }
+      },
+      {
+        "lib-name": "bar",
+        "lib-path": "lib/bar",
+        "srcs": {
+          "lib/bar": ["zoo.c", "zoom.c"],
+          "lib/bar/temp": ["test1.c", "test2.c"]
+        }
+      }
+    ],
+    "dep-py-modules": [
+      {
+        "py-module-name": "module_a",
+        "py-module-path": "python/module_a",
+        "srcs": {
+          "python/module_a": ["foo.py", "bar.py"]
+        },
+        "extn-srcs": {
+          "python/module_a": ["foo.c", "bar.c"],
+          "python/module_a/sub_mod": ["lmn.cpp"]
+        }
+      },
+      {
+        "py-module-name": "module_b",
+        "py-module-path": "python/module_b",
+        "c-compiler-flags": "-DSOMEMACRO",
+        "c++-compiler-flags": "-DSOMEMACRO",
+        "linker-flags": "-lfoo",
+        "srcs": {
+          "python/module_b": ["yyy.py", "zoo.py"],
+          "python/module_b/sub_mod": ["1.py", "2.py"]
+        },
+        "extn-srcs": {
+          "python/module_b": ["xyz.c", "temp.c"],
+          "python/module_b/sub_mod": ["y.cpp", "z.cpp"]
+        }
+      }
+    ]
+  }
+  -------------------------
+
+* How to run jet-pkg-gen.py and autogenerate packaging Makefile/Manifest files.
+
+  - After creating development sandbox and app development is complete, write the JSON file
+    using the instructions as explained above.
+  - After writing the JSON file, run jet-pkg-gen.py as shown below:
+    jet-pkg-gen.py -i <path-to-json-file> -p <path-to-sandbox-ending-with-src>
+  - After running jet-pkg-gen.py, all necessery Makefile/Manifest files would have generated.
+  - Next run mk-* commands to build the app. 
+  - After building the app, the generated app package can be deployed on-box.
+
+#END

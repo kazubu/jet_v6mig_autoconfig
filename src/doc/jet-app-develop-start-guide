@@ -1,0 +1,433 @@
+# $Id:$
+#
+# JET App Build/Packaging Steps Guide 
+#
+# Copyright (c) 2015, Juniper Networks, Inc.
+# All rights reserved.
+#
+
+
+* Refer JET API client package(jet-1.tgz) for details on developing the App.
+
+Below steps should be followed for building and packaging the app for on-box deployments.
+
+****************
+Assumption: In the VM, it is assumed that JET Backing SB and JET toolchain packages
+are installed in /usr/local/junos-jet/ path.
+***************
+
+* Copy certs (needed if JET app to be signed)
+
+ - For creating a Signed App, make sure to request for certificates 
+  and copy them as explained below. For unsigned apps development, ignore this step.
+ - Send request to Juniper to get certs.
+ - Copy the certs to /usr/local/junos-jet/certs path.
+
+* Export mksb and mk command path
+
+ - For bash shell: 
+  export PATH="$PATH:/usr/local/junos-jet/<replace-release-with-actual-string>/junos-jet-sb/bin"
+   eg:
+   [root@myvm ~]# which mk
+   /usr/local/junos-jet/15.1R1/junos-jet-sb/bin/mk
+   [root@myvm ~]# which mksb
+   /usr/local/junos-jet/15.1R1/junos-jet-sb/bin/mksb
+
+* Create Development Sandbox (Dev SB)
+
+ - mkdir <workspace-path> eg: mkdir /home/<user>/workspace
+ - cd /home/<user>/workspace
+ - Run: mksb -n  <mysb-name> eg: mksb  -n mysampleapp
+  NOTE: you can also checkout sample app: mksb -n mysampleapp <example-app> (This command
+  will checkout a sample app and respective packaging Makefiles and manifest files,
+  which can be used for reference. The example-apps are echoclient and echoserver.
+  So the command to checkout echoclient would be: mksb -n mysampleapp echoclient)
+
+* Developing the App
+
+ - cd /home/<user>/workspace/mysampleapp/src  ($SB/src)
+ - create subdir for application code in $SB/src/python or $SB/src/lib or $SB/src/sbin,
+   based on whether it is a python or library or bin (executable) application.
+
+   Eg: The echoclient example code: $SB/src/bin/echoclientd
+	[root@myvm ~]# /home/<user>/workspace/mysampleapp/src/bin/echoserverd]# ls
+	Makefile
+	echoserver.c
+
+ - Develop the code 
+ - Auto-generate app Makefile or write manually.
+   Write JSON file for auto-generating app Makefile and packaging related files.
+   (see how-to-write-package-json-file for more details)
+   NOTE: The auto-generated app Makefile will be correct for most of the general
+   cases; if there are any external library depedencies, it should be tweaked accordingly.
+ - Run 'mk' and build the app alone for quick testing. 
+   Eg: cd $SB/src/bin/echoclientd; mk
+   NOTE: The object files can be found here: $SB/junos-jet-sb-obj/i386/bin/echoclientd/
+
+   To manually write the Makefile (Template for Makefile is different based
+   on the type of app. (Refer examples). 
+
+  * Python app sample Makefile:
+
+  Copy/paste the below contents in the Makefile; 
+  And replace <appname> tag with subdir name.
+
+  ---------------------------------------
+  SRC_DIR = ${RELSRCTOP}/python/<appname>
+  .PATH: ${SB}/src/python/<appname>
+
+  #
+  # the python package name
+  #
+  PYTHON_PKG_NAME=<appname>
+
+  # configure where the modules and scripts are based
+  PYTHON_MODULE_BASE=${SRC_DIR}
+  PYTHON_SCRIPT_BASE=${SRC_DIR}
+
+
+  # only consider the sub path.
+  #NOTE: if scripts are under one more subdir say ${RELSRCTOP}/python/<appname>/foo
+  # then change below definition to PYTHON_MODULE_SRCS_SUBPATH ?= foo
+  PYTHON_MODULE_SRCS_SUBPATH ?= .
+
+
+  # support tools
+  .include <bsd.python.mk>
+  ----------------------------------------
+
+  NOTE: You can also find sample template Makefile for reference:
+ /home/<user>/workspace/mysampleapp/src/python/Makefile.template
+
+  * Library sample Makefile:
+
+  Copy paste the below contents, and replace <libname> with subdir name,
+  and <list-of-src-files> with list of .c file names, without prefixing any paths.
+  If sources are present in additional sub-paths ,  set .PATH variable with additional paths. 
+  And replace <list-of-any-additional-cflags> with additional flags/paths if any,
+  otherwise remove it.
+
+  ----------------------------------------
+  .PATH: ${SB}/src/lib/<libname>
+
+  LIB = <libname>
+
+  SHLIB_MAJOR = 1
+
+  SRCS = <list-of-src-files>
+
+  CFLAGS += <list-of-any-additional-cflags>
+
+  .include <bsd.lib.mk>
+  ---------------------------------------
+
+  NOTE: You can also find sample template Makefile for reference:
+   /home/<user>/workspace/mysampleapp/src/lib/Makefile.template
+
+
+  * Prog (executable) sample Makefile:
+  Copy paste the below contents, and replace <app> with subdir name,
+  and <list-of-src-files> with list of .c file names, without prefixing any paths.
+  If sources are present in additional sub-paths ,  set .PATH variable with
+  additional paths. And replace <list-of-any-additional-cflags> with additional
+  flags/paths if any, otherwise remove it.
+
+  ------------------
+  .PATH: ${SB}/src/lib/<app>
+
+  PROG = <app>
+
+  SRCS = <list-of-src-files>
+
+  CFLAGS += <list-of-any-additional-cflags>
+
+  .include <version.mk>
+
+  .include <bsd.prog.mk>
+
+  ---------------------
+
+  NOTE: You can also find sample template Makefile for reference:
+  /home/<user>/workspace/mysampleapp/src/sbin/Makefile.template
+
+
+*** Next, Create additional directories for packaging; and write Makefile/manifest files
+*** for packaging the app.
+*** NOTE: All the below steps are automated. You can use jet-pkg-get.py script
+*** for autogenerating the packaging makefiles and manifest files.
+*** Write a JSON file(see how-to-write-package-json-file) with necessary details,
+*** and all packaging files would be auto-generated.
+*** For manually writing below files, follow procedure as described below.
+
+* Write pkgs/<appname>/Makefile, Makefile.depend, manifest.header files
+
+  Create $SB/src/pkgs/<app-name>/ subdir for app package and write Makefiles.
+  Create below files: [Makefile, Makefile.depend and manifest.header].
+
+  - Makefile contains definition of ORIGIN. It should be JET_PKG_SIGN or JET_PKG_NOSIGN depending
+    on whether it is signed or unsigned app.
+  - Makefile.depend contains sub-dir dependencies (DIRDEPS), which needs to be built before
+    building the final app package.
+  - manifest.header defines package_id
+
+  * Write pkgs/<app>/Makefile
+    Copy/paste the below contents in Makefile;
+    And set ORIGIN to be JET_PKG_SIGN or JET_PKG_NOSIGN depending on whether
+    to sign the app or not.
+
+    ---------------------------------------
+    ORIGIN = JET_PKG_NOSIGN
+
+    .include "${SB_BACKING_SB}/src/pkgs/Makefile.jet"
+
+
+    MANIFEST_HEADER=${_CURDIR}/manifest.header
+    .export MANIFEST_HEADER
+    XMLPKG_TOGGLE_LIST+=config-validate
+    ---------------------------------------
+
+  * Write pkgs/<app>/Makefile.depend
+    Copy/paste the below contents in Makefile;
+    Change <appdir>/<app> to python/<appname> or lib/<appname> or
+    sbin/<appname> respectively. 
+
+    ----------------------------------------------
+    DEP_RELDIR := ${_PARSEDIR:S,${SRCTOP}/,,}
+
+    DEP_MACHINE := ${.PARSEFILE:E}
+
+    DIRDEPS = \
+    build/pkgs-env \
+    <appdir>/<app>
+
+    .if ${UNSIGNED_ENV} != "true"
+    DIRDEPS += etc/certs
+    .endif
+
+    .include <dirdeps.mk>
+    -----------------------------------------------
+
+
+  * Write pkgs/<app>/manifest.header
+    Just copy paste below content.
+
+    ---------------------------------------------
+    /set package_id=31 role=Provider_Daemon
+
+    ---------------------------------------------
+
+
+    Eg: The example packaging files for echoclient app:
+
+    [root@myvm ~]#cd/home/<user>/workspace/mysampleapp/src /pkgs/echoclient
+    [root@myvm ~]#cat Makefile
+    ORIGIN = JET_PKG_SIGN
+
+    .include "${SB_BACKING_SB}/src/pkgs/Makefile.jet"
+
+
+    MANIFEST_HEADER=${_CURDIR}/manifest.header
+    .export MANIFEST_HEADER
+    XMLPKG_TOGGLE_LIST+=config-validate
+
+     [root@myvm ~]#cat Makefile.depend
+    # This file is NOT autogenerated - take care!
+
+    DEP_RELDIR := ${_PARSEDIR:S,${SRCTOP}/,,}
+
+    DEP_MACHINE := ${.PARSEFILE:E}
+
+    DIRDEPS = \
+    build/pkgs-env \
+    bin/echoclientd
+
+    .if ${UNSIGNED_ENV} != "true"
+    DIRDEPS += etc/certs
+    .endif
+
+    .include <dirdeps.mk>
+
+     [root@myvm ~]#cat manifest.header
+    /set package_id=31 role=Provider_Daemon
+
+
+* Write package-scripts DESC, COMMENT and Makefile
+  - Create $SB/src/package-scripts/<app-name>/ dir entry providing
+    details about the package.
+  - Create COMMENT, DESC and Makefile (see example for syntax).
+
+
+  * Write COMMENT
+    Copy/paste below contents;
+    And replace <brief-comment> with short app name description.
+
+    ----------------------------
+    JET <brief-comment> [%RELEASE%]
+
+    ----------------------------
+
+  * Write DESC
+    Copy/paste below contents;
+    And replace <brief-comment> with short app name description.
+
+    --------------------------------
+    Software version:       %RELEASE%
+
+    This package contains JET <brief-comment>
+    -----------------------------
+
+
+  * Write Makefile
+    Just copy/paste below contents.
+
+    --------------------------------
+    .include "../Makefile.inc"
+    ------------------------------
+
+    Eg: The example package-script files for echoclient app:
+
+    [root@myvm ~]# cd /home/<user>/workspace/mysampleapp/src/pkgs/echoclient/package-scripts/echoclient
+    [root@myvm ~]# cat COMMENT 
+    JET echoserver example Application [%RELEASE%]
+
+    [root@myvm ~]# cat DESC
+    Copyright (c) %COPYRIGHT%, Juniper Networks, Inc.
+    All rights reserved.
+
+    Software version:       %RELEASE%
+
+    This package contains JET echoserver example Application Suite
+
+    [root@myvm ~]# cat Makefile 
+    #
+    # $Id:$
+    #
+    # Copyright (c) 2015, Juniper Networks, Inc.
+    # All rights reserved.
+    #
+    .include "../Makefile.inc"
+
+ 
+* Write Manifest file
+  Create manifest file in $SB/src/release/<app-name>.manifest and
+  specify install location of the app on router.
+  It will be INSTALLDIR (replaces to/var/db/scripts/jet/<app-name>/) for the main app.
+  And for python dependent modules, it will be PYTHON_MOD_INSTALLDIR
+  (/opt/lib/python2.7/site-packages/<app-name>/).
+
+  * Write <appname>.manifest
+    Copy/paste the below contents;
+    Replace sbin/<appname>/<appname> OR
+    lib/<libname>/<libname>so.1 OR sbin/<appname><appname> appropriately.
+
+   -------------------------------------------------
+   /set package_id=31 role=Provider_Daemon
+
+   # Example python app
+   %TOPDIR%/python/<app>/<app>.py store=%INSTALLDIR%/<app>.py mode=555 program_id=1
+
+   # Example python app
+   %TOPDIR%/python/<module>/<module-file>.py store=%PYTHON_MOD_INSTALLDIR%/<module>/<module-file>.py mode=555 program_id=1
+
+   # Example python server side extension app
+   %TOPDIR%/python/<app>/<app>.py store=%EXTN_INSTALLDIR%/<app>.py mode=555 program_id=1
+
+   # Example bin
+   %TOPDIR%/bin/<app>/<app> store=%INSTALLDIR%/<app> mode=555 program_id=1
+
+   # Example shared library
+   %TOPDIR%/lib/<libfoo>/<libfoo>.so.1 store=/usr/lib/<libfoo.so.1> mode=555 program_id=1
+   ---------------------------------------------------
+
+   Eg: The example manifest file for echoclient app:
+
+   [root@myvm ~]# cd/home/<user>/workspace/mysampleapp/src /release
+   [root@myvm ~]# cat echoclient.manifest 
+   # $Id:$
+   #
+   # Copyright (c) 2015, Juniper Networks, Inc.
+   # All rights reserved.
+   #
+   #
+   #        Name: echoclientd 
+   # Description: Echoclient daemon which illustrates the usage of Jet APIs
+   #        Type: Daemon application
+   #     Runs on: Routing Engine
+   #
+
+   /set package_id=31 role=Provider_Daemon
+   %TOPDIR%/bin/echoclientd store=%INSTALLDIR%/echoclientd mode=555 program_id=1
+
+
+* Build the JET app package
+  - After development of the app completes and all Makefile/manifest are ready,
+    the app can be built and packaged.
+  - cd /home/<user>/workspace/mysampleapp/src/
+  - Run: mk <app-name> (eg: mk echoclient)
+  - The app will be compiled and app package (.tgz file) gets generated in
+    /home/<user>/workspace/mysampleapp/junos-jet-sb-obj/ship/ path. 
+
+  Eg: After building the echoclient sample app, the package is generated in below path:
+  [root@myvm ~]# cd/home/<user>/workspace/mysampleapp/junos-jet-sb-obj/ship>ls
+  echoclient-15.2.R1.1.tgz
+  echoclient-15.2.R1.1.tgz.sha1
+
+* Deploy JET app package on JUNOS box
+  - Copy the generated app package to JUNOS box.
+  - If the app package is unsigned, run below command and the package gets installed.
+	From cli> request system software add <app-package>.tgz
+
+  - If the app package is signed, configure #set system extension provider <key>; and commit.
+  - Run >request system software add <app-package>.tgz from cli; and the package validates
+    the certs bundled on the box with configured key, if matches, packages gets installed.
+
+    Eg:
+    Configure provider keys(for signed app package):
+    regress@choc-mx480-b# show system 
+    extensions {
+        providers {
+             juniperftsdksystest {
+                license-type juniper deployment-scope 
+    [ commercial private ];
+            }
+        }
+    }
+
+    Eg: Installation of sample echoclient app package:
+    Install the app package:
+    % cli
+    {master}
+    regress@mybox> request system software add echoclient-15.2.R1.1.tgz 
+    NOTICE: Validating configuration against echoclient-15.2.R1.1.tgz.
+    NOTICE: Use the 'no-validate' option to skip this if desired.
+    Installing package '/var/home/regress/echoclient-15.2.R1.1.tgz' ...
+    Verified echoclient-15.2.R1.1 signed by juniperftsdksystest-testing-private-1
+    juniperftsdksystest
+    Please check system extensions, deployment-scope configuration for correctness
+    Mounted echoclient package on /dev/md17...
+    Saving package file in /var/sw/pkg/echoclient-15.2.R1.1.tgz ...
+    Saving state for rollback ...
+
+    {master}
+    regress@mybox> 
+
+    The app is installed:
+    regress@mybox> show version 
+    ..
+    ..
+    JET echoserver example Application [15.1I20150115_1409_root]
+
+
+    regress@mybox% ls /var/db/scripts/jet/
+    echoclientd 
+    regress@mybox% 
+
+    Run the app
+    root@choc-mx480-b1% /var/db/scripts/jet/echoclientd 
+    Usage: /var/db/scripts/jet/echoclientd <addr> <msg>
+
+  If the app is python script:
+  Configure the script # set system scripts jet file <app>.py
+  Run from cli> jet <app>.py
+
+# END

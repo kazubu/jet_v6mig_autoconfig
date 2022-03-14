@@ -1,0 +1,27 @@
+# $Id:$
+#
+# Copyright (c) 2015, Juniper Networks, Inc.
+# All rights reserved.
+#
+
+* Under python/ dir, create subdir for developing python apps.
+  - mkdir $SB/src/python/mypythonapp
+
+* Developing Python apps
+
+ - cd $SB/src/python
+ - create subdir for python application (eg: mypythonapp)
+
+ - Develop the code under $SB/src/python/mypythonapp
+ - Auto-generate app Makefile or write manually.
+   Write JSON file for auto-generating app Makefile and packaging related files.
+   (see how-to-write-package-json-file for more details)
+   NOTE: The auto-generated app Makefile will be correct for most of the general
+   cases; if there are any external library depedencies, it should be tweaked accordingly.
+ - Run 'mk' and build the python app alone for quick testing.
+   Eg: cd $SB/src/python/mypythonapp; mk
+   NOTE: The object files can be found here: $SB/junos-jet-sb-obj/<machine>/python/mypythonapp
+   OR $SB/junos-jet-sb-obj/bsd10/<machine>/python/mypythonapp (for bsd10 occam builds)
+ - If python app depends on any C/C++ libraries, the libs should be developed under $SB/src/lib/.
+
+

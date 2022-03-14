@@ -1,0 +1,26 @@
+# $Id:$
+#
+# Copyright (c) 2015, Juniper Networks, Inc.
+# All rights reserved.
+#
+
+* Under bin/ dir, create subdir for developing C/C++ Apps/Binaries/executables.
+  - mkdir $SB/src/prog/myapp
+
+* Developing the C/C++ Binaries
+
+ - cd $SB/src/bin
+ - create subdir for application binary (eg: myapp)
+
+ - Develop the code under $SB/src/bin/myapp
+ - Auto-generate app Makefile or write manually.
+   Write JSON file for auto-generating app Makefile and packaging related files.
+   (see how-to-write-package-json-file for more details)
+   NOTE: The auto-generated app Makefile will be correct for most of the general
+   cases; if there are any external library depedencies, it should be tweaked accordingly.
+ - Run 'mk' and build the app alone for quick testing.
+   Eg: cd $SB/src/bin/myapp; mk
+   NOTE: The object files can be found here: $SB/junos-jet-sb-obj/<machine>/bin/myapp
+   OR $SB/junos-jet-sb-obj/bsd10/<machine>/bin/myapp (for bsd10 occam builds)
+
+

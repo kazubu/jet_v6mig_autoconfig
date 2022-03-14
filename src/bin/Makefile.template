@@ -1,0 +1,18 @@
+#
+# Makefile.template for executable
+# copy this file as Makefile in <app> sub directory and make changes.
+#
+
+PROG = @app@
+
+SRCS = @list-of-src-files@
+
+CFLAGS += @list-of-any-additional-cflags@
+LDFLAGS += @list-of-link-flags@
+LDADD += @list-of-dependent-libs@
+
+.include <version.mk>
+.include <bsd.prog.mk>
+
+# NOTE: above @something@ should be removed and proper value should be given,
+# if nothing to be added, remove it and leave the variable value empty.
