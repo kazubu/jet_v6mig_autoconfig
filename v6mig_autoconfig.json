@@ -1,0 +1,11 @@
+{
+  "app-name": "v6mig_autoconfig",
+  "app-path": "python/v6mig_autoconfig",
+  "language": "python",
+  "main-scripts": ["run.py"],
+  "app-type": "standalone",
+  "sign": "no",
+  "os-type": "bsd11",
+  "target-arch": "i386",
+  "description": "v6mig autoconfiguration"
+}
