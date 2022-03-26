@@ -82,11 +82,21 @@ def syslog_cb(message):
         print(message)
         print(message, file = f)
 
+def ifa_cb(message):
+    print(message)
+    ifd = message['jet-event']['attributes']['name']
+    subunit = str(message['jet-event']['attributes']['subunit'])
+    ifl = ifd + '.' + subunit
+    family = message['jet-event']['attributes']['family']
+    address = message['jet-event']['attributes']['local-address']
+
+    print("ifl: {0}, family: {1}, address: {2}".format(ifl, family, address))
+
 def main():
     try:
         print("[INFO] start")
         mqtt_client = open_mqtt()
-        subscribe(mqtt_client, createCustomTopic(), syslog_cb)
+        subscribe(mqtt_client, createCustomTopic('/junos/events/kernel/interfaces/ifa/#'), ifa_cb)
         while True:
             time.sleep(0.1)
 
