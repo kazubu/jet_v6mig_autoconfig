@@ -2,7 +2,7 @@
   "app-name": "v6mig_autoconfig",
   "app-path": "python/v6mig_autoconfig",
   "language": "python",
-  "main-scripts": ["run.py"],
+  "main-scripts": ["v6mig_autoconfig.py"],
   "app-type": "standalone",
   "sign": "yes",
   "os-type": "bsd11",
