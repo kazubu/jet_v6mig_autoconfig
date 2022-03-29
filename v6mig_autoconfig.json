@@ -2,10 +2,14 @@
   "app-name": "v6mig_autoconfig",
   "app-path": "python/v6mig_autoconfig",
   "language": "python",
-  "main-scripts": ["v6mig_autoconfig.py"],
+  "main-scripts": ["ipoe_autoconfig.py"],
   "app-type": "standalone",
   "sign": "yes",
-  "os-type": "bsd11",
+  "os-type": "bsd12",
   "target-arch": "i386",
-  "description": "v6mig autoconfiguration"
+  "description": "v6mig autoconfiguration",
+  "srcs": {
+    "v6mig/v6mig": ["__init__.py", "dns.py", "main.py"],
+    "v6mig/junos_utils": ["__init__.py", "main.py"]
+  }
 }

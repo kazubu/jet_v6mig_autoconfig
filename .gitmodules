@@ -1,0 +1,3 @@
+[submodule "src/python/v6mig_autoconfig/v6mig"]
+	path = src/python/v6mig_autoconfig/v6mig
+	url = https://github.com/kazubu/junos-dslite-autoconfig.git
