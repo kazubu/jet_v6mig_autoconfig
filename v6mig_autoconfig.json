@@ -3,7 +3,7 @@
   "app-path": "python/v6mig_autoconfig",
   "language": "python",
   "main-scripts": ["ipoe_autoconfig.py"],
-  "app-type": "standalone",
+  "app-type": "daemon",
   "sign": "yes",
   "os-type": "bsd12",
   "target-arch": "i386",
