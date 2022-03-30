@@ -29,7 +29,7 @@ CAPABILITY = 'dslite'
 
 LOG_FORMAT = "[%(asctime)s] [%(levelname)s][%(name)s:%(lineno)s][%(funcName)s]: %(message)s"
 
-IPIP_IFL = 'ip-0/0/0.0'
+DEFAULT_IPIP_IFL = 'ip-0/0/0.0'
 
 ##
 DEFAULT_TOPIC = '#'
@@ -41,13 +41,16 @@ MQTT_TIMEOUT = 180
 logger = getLogger(__name__)
 handlers = collections.defaultdict(set)
 
+##
 next_update = None
 provisioned_ttl = None
+need_update = False
+
+##
 external_interface = None
 interface_address = None
 dns_servers = None
 insecure = False
-need_update = False
 ipip_ifl = None
 
 ## MQTT
@@ -116,15 +119,10 @@ def ifa_cb(message):
     ifl = ifd + '.' + subunit
 
     logger.info("Received IFA update: event: {0}, ifl: {1}, family: {2}, address: {3}".format(event_id, ifl, family, address))
-    print(event_id == 'KERNEL_EVENT_IFA_ADD')
-    print(event_id == 'KERNEL_EVENT_IFA_CHANGE')
-    print(family == 'inet6')
-    print(ifl == external_interface)
-    print(address != interface_address)
 
     if event_id == 'KERNEL_EVENT_IFA_ADD' or event_id == 'KERNEL_EVENT_IFA_CHANGE':
         if family == 'inet6' and ifl == external_interface and address != interface_address:
-            logger.info("External Interface IPv6 address is changed. {0} -> {1}".format(interface_address, address))
+            logger.info("External Interface IPv6 address is changed: {0} -> {1}.".format(interface_address, address))
             interface_address = address
             need_update = True
 
@@ -159,7 +157,7 @@ def update_configuration(device):
     """
     global provisioned_ttl
 
-    logger.info("Start update")
+    logger.info("Update process is started.")
     logger.debug("DNS Servers: %s" % ', '.join(dns_servers))
 
     ps = v6mig.discover_provisioning_server(copy.copy(dns_servers))
@@ -199,17 +197,18 @@ def update_configuration(device):
 
     if(pd['ttl']):
         provisioned_ttl = int(pd['ttl'])
+        logger.debug("TTL: %s" % provisioned_ttl)
 
     junos.update_configuration(device, config)
     return True
 
 def main():
+    global need_update
     global external_interface
     global interface_address
     global ipip_ifl
     global dns_servers
     global insecure
-    global need_update
 
     root_logger = getLogger()
 
@@ -243,7 +242,7 @@ def main():
     logger.debug("External interface: %s" % external_interface)
 
     insecure = True if args.insecure else False
-    ipip_ifl = args.ipip_ifl if args.ipip_ifl else IPIP_IFL
+    ipip_ifl = args.ipip_ifl if args.ipip_ifl else DEFAULT_IPIP_IFL
 
     device = Device()
     device.open()
