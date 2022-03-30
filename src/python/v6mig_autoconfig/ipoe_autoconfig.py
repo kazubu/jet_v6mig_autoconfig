@@ -118,10 +118,10 @@ def ifa_cb(message):
     address = str(message['jet-event']['attributes']['local-address']).strip().split('/')[0]
     ifl = ifd + '.' + subunit
 
-    logger.info("Received IFA update: event: {0}, ifl: {1}, family: {2}, address: {3}".format(event_id, ifl, family, address))
+    logger.debug("Received IFA update: event: {0}, ifl: {1}, family: {2}, address: {3}".format(event_id, ifl, family, address))
 
     if event_id == 'KERNEL_EVENT_IFA_ADD' or event_id == 'KERNEL_EVENT_IFA_CHANGE':
-        if family == 'inet6' and ifl == external_interface and address != interface_address:
+        if family == 'inet6' and ifl == external_interface and address[0:4] != 'fe80' and address != interface_address:
             logger.info("External Interface IPv6 address is changed: {0} -> {1}.".format(interface_address, address))
             interface_address = address
             need_update = True
@@ -247,10 +247,14 @@ def main():
     device = Device()
     device.open()
 
-    interface_address = junos.get_interface_address(device, external_interface)
-    if(interface_address == None):
-        logger.error("Interface has no IPv6 address!")
-        exit(2)
+    while True:
+        interface_address = junos.get_interface_address(device, external_interface)
+        if(interface_address == None):
+            logger.error("Interface has no IPv6 address! Retrying...")
+            time.sleep(5)
+        else:
+            logger.debug("Interface address: %s" % interface_address)
+            break
 
     if(args.area):
         if(args.area in DNS_SERVERS):
@@ -287,13 +291,14 @@ def main():
                         interval = random_interval(minimum = 60 * 20, maximum = 60 * 24)
 
                     set_next_update(interval)
-                    logger.info("Update is succeeded or not changed. Wait {0} minutes for next update.".format(str(interval)))
+                    logger.info("Update is succeeded or not changed. Wait %s minutes for next update."% str(interval))
                 else:
                     interval = random_interval(minimum = 10, maximum = 30)
                     set_next_update(interval)
-                    logger.info("Update is failed. Wait {0} minutes for next update.".format(str(interval)))
+                    logger.info("Update is failed. Wait %s minutes for next update." % str(interval))
 
     except Exception as ex:
+        print(ex)
         pass
 
 
