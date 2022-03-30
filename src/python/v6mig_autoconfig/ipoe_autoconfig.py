@@ -216,6 +216,7 @@ def main():
     handler.setFormatter(Formatter(LOG_FORMAT))
     root_logger.addHandler(handler)
 
+    logger.setLevel('INFO')
     getLogger('v6mig_autoconfig.v6mig.junos_utils.main').setLevel('INFO')
     getLogger('v6mig_autoconfig.v6mig.v6mig.main').setLevel('INFO')
 
