@@ -24,7 +24,7 @@ DNS_SERVERS = {
 
 VENDOR_ID = '000000-kazubu'
 PRODUCT = 'v6mig_autoconfig'
-VERSION = '0_0_1'
+VERSION = '0_0_2'
 CAPABILITY = 'dslite'
 
 LOG_FORMAT = "[%(asctime)s] [%(levelname)s][%(name)s:%(lineno)s][%(funcName)s]: %(message)s"
