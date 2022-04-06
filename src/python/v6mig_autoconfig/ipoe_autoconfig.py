@@ -199,8 +199,7 @@ def update_configuration(device):
         provisioned_ttl = int(pd['ttl'])
         logger.debug("TTL: %s" % provisioned_ttl)
 
-    junos.update_configuration(device, config)
-    return True
+    return junos.update_configuration(device, config)
 
 def main():
     global need_update
