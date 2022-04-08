@@ -10,6 +10,7 @@ import os
 import random
 import sys
 import time
+import re
 
 from paho.mqtt import client as mqtt
 
@@ -24,10 +25,11 @@ DNS_SERVERS = {
 
 VENDOR_ID = '000000-kazubu'
 PRODUCT = 'v6mig_autoconfig'
-VERSION = '0_0_2'
+VERSION = '0_0_3'
 CAPABILITY = 'dslite'
 
 LOG_FORMAT = "[%(asctime)s] [%(levelname)s][%(name)s:%(lineno)s][%(funcName)s]: %(message)s"
+TOKEN_FILE = '/var/tmp/token_v6mig.dat'
 
 DEFAULT_IPIP_IFL = 'ip-0/0/0.0'
 
@@ -52,6 +54,8 @@ interface_address = None
 dns_servers = None
 insecure = False
 ipip_ifl = None
+token = None
+token_updated = False
 
 ## MQTT
 def createCustomTopic(event_id = DEFAULT_TOPIC):
@@ -151,11 +155,41 @@ def set_next_update(interval):
     global next_update
     next_update = int(current_time() + interval * 60)
 
+def check_token(_token):
+    """
+    Check token format.
+    """
+    return True if len(_token) == 64 and re.match(r'[a-f0-9]{64}', _token) else False
+
+def load_token(token_file = TOKEN_FILE):
+    """
+    Load token file and update global token.
+    """
+    global token
+
+    if os.path.isfile(token_file):
+        with open(token_file) as f:
+            _token = f.read()
+            token = _token if check_token(_token) else None
+            logger.debug("Loaded token: %s" % token)
+    else:
+        logger.info('Token file is not found.')
+
+def save_token(token_file = TOKEN_FILE):
+    """
+    Save global token to token file.
+    """
+    with open(token_file, mode = 'w') as f:
+        f.write(token)
+        logger.debug("Token saved.")
+
 def update_configuration(device):
     """
     Try to retrieve provisioning information from provisioning server and apply to configuration if needed.
     """
     global provisioned_ttl
+    global token
+    global token_updated
 
     logger.info("Update process is started.")
     logger.debug("DNS Servers: %s" % ', '.join(dns_servers))
@@ -164,7 +198,7 @@ def update_configuration(device):
     logger.debug("Provisioning server: %s" % ps)
 
     if(ps):
-        pd = v6mig.get_provisioning_data(provisioning_server = ps, nameservers = copy.copy(dns_servers), vendorid = VENDOR_ID, product = PRODUCT, version = VERSION, capability = CAPABILITY, insecure = insecure)
+        pd = v6mig.get_provisioning_data(provisioning_server = ps, nameservers = copy.copy(dns_servers), vendorid = VENDOR_ID, product = PRODUCT, version = VERSION, capability = CAPABILITY, token = token, insecure = insecure)
         logger.debug("Provisioning Data: %s" % pd)
     else:
         logger.error("Failed to retrieve provisioning server.")
@@ -173,6 +207,11 @@ def update_configuration(device):
 
     if(pd):
         aftr = v6mig.get_aftr_address(pd, copy.copy(dns_servers), multiple = True)
+        _token = pd['token']
+        if(check_token(_token) and token != _token):
+            logger.debug("Token change is detected: {0} -> {1}".format(token, _token))
+            token = _token
+            token_updated = True
     else:
         logger.error("Failed to retrieve provisioning data.")
         return False
@@ -208,6 +247,7 @@ def main():
     global ipip_ifl
     global dns_servers
     global insecure
+    global token_updated
 
     root_logger = getLogger()
 
@@ -243,6 +283,8 @@ def main():
 
     insecure = True if args.insecure else False
     ipip_ifl = args.ipip_ifl if args.ipip_ifl else DEFAULT_IPIP_IFL
+
+    load_token()
 
     device = Device()
     device.open()
@@ -291,6 +333,9 @@ def main():
                         interval = random_interval(minimum = 60 * 20, maximum = 60 * 24)
 
                     set_next_update(interval)
+                    if(token_updated):
+                        save_token()
+                        token_updated = False
                     logger.info("Update is succeeded or not changed. Wait %s minutes for next update."% str(interval))
                 else:
                     interval = random_interval(minimum = 10, maximum = 30)
