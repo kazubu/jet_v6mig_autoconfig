@@ -68,11 +68,11 @@ def createCustomTopic(event_id = DEFAULT_TOPIC):
 def subscribe(mqtt_client, subscriptionType, handler = None, qos = 0):
     global handlers
     topic = subscriptionType['topic']
-    print("topic: " + str(topic))
     mqtt_client.subscribe(topic)
     subscriptionType['subscribed'] = 1
     if(handler):
         handlers[topic].add(handler)
+    logger.debug("Topic %s is subscribed." % str(topic))
 
 def mqtt_on_message_cb(client, obj, msg):
     payload = msg.payload
@@ -83,9 +83,9 @@ def mqtt_on_message_cb(client, obj, msg):
     json_data, end = decoder.raw_decode(payload.decode('utf-8'))
 
     if(json_data is None):
-        print("err")
+        logger.warn('JSON Data is empty.')
     if(len(payload) != end):
-        print("err")
+        logger.warn('Payload length is invalid.')
 
     callback_called = False
     for cbs in handlers:
@@ -277,6 +277,7 @@ def main():
         logger.setLevel('DEBUG')
         getLogger('v6mig_autoconfig.v6mig.junos_utils.main').setLevel('DEBUG')
         getLogger('v6mig_autoconfig.v6mig.v6mig.main').setLevel('DEBUG')
+        logger.debug('Debug logging is enabled')
 
     external_interface = args.external_interface
     logger.debug("External interface: %s" % external_interface)
