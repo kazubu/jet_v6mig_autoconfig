@@ -12,6 +12,9 @@ This program is a sample implementation of [IPv6マイグレーション技術�
  - Load following configuration to Junos box(need to change NTT_EAST, ge-0/0/0 and USERNAME to appropriate value).
 
 ```
+set system services extension-service notification allow-clients address 127.0.0.1
+set interfaces lo0 unit 0 family inet address 127.0.0.1/32
+
 set system extensions extension-service application file ipoe_autoconfig.py arguments "--external-interface ge-0/0/0.0 --area NTT_EAST --insecure true"
 set system extensions extension-service application file ipoe_autoconfig.py daemonize
 set system extensions extension-service application file ipoe_autoconfig.py respawn-on-normal-exit
@@ -21,6 +24,7 @@ set system extensions extension-service application file ipoe_autoconfig.py user
  - Other required configuration(need to change interface name and addresses to appropriate value):
 ```
 set interfaces ge-0/0/0.0 unit 0 family inet6 address 2001:db8::2/64
+set interfaces ip-0/0/0 unit 0 family inet
 set routing-options rib inet6.0 static route ::/0 next-hop 2001:db8::1
 set routing-options static route 0/0 next-hop ip-0/0/0.0
 ```
@@ -29,6 +33,9 @@ set routing-options static route 0/0 next-hop ip-0/0/0.0
  - Load following configuration to Junos box(need to change ge-0/0/0.0 and USERNAME to appropriate value).
 
 ```
+set system services extension-service notification allow-clients address 127.0.0.1
+set interfaces lo0 unit 0 family inet address 127.0.0.1/32
+
 set system extensions extension-service application file ipoe_autoconfig.py arguments "--external-interface ge-0/0/0.0 --dns-from-dhcpv6 true --insecure true"
 set system extensions extension-service application file ipoe_autoconfig.py daemonize
 set system extensions extension-service application file ipoe_autoconfig.py respawn-on-normal-exit
@@ -40,6 +47,7 @@ set system extensions extension-service application file ipoe_autoconfig.py user
 set interfaces ge-0/0/0 unit 0 family inet6 dhcpv6-client client-type autoconfig
 set interfaces ge-0/0/0 unit 0 family inet6 dhcpv6-client client-ia-type ia-na
 set interfaces ge-0/0/0 unit 0 family inet6 dhcpv6-client client-identifier duid-type duid-ll
+set interfaces ip-0/0/0 unit 0 family inet
 set protocols router-advertisement interface ge-0/0/0.0 default-lifetime 0
 set routing-options static route 0/0 next-hop ip-0/0/0.0
 ```
@@ -64,8 +72,7 @@ set routing-options static route 0/0 next-hop ip-0/0/0.0
    - AFTR address is FQDN. Returns 1 AAAA record.
 
 ## Caveats
- - Covers only vendorid, product, version and capability parameters. Persistent token and authentication is not implemented.
+ - Covers only vendorid, product, version, capability and persistent token parameters. Authentication is not implemented.
  - Access sequence is a bit different from the specification (c.2 and c.3 is not implemented, wait 10-30 minutes even if failed with the errors.).
- - Currently, SRX doesn't support IPIP6 tunnel. This script works only on MX series router.
  - Currently, MX series router doesn't support DHCPv6 client with autoconfig(RA) mode(statefull ia-pd only).
 
