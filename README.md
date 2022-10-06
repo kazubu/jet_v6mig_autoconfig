@@ -65,6 +65,9 @@ set routing-options static route 0/0 next-hop ip-0/0/0.0
  - --debug [true]: Optional. Output debug messages.
  - --ipip-ifl [Interface Name(IFL)]: Optional. Specify IP-IP tunnel interface for DS-Lite tunnel.
 
+## Verified Platform
+ - vSRX 3.0 22.2R1.9
+
 ## Verified VNEs
  - Internet Multifeed transix (NTT East, Flet's Next, 2022/02)
    - AFTR address is an IPv6 address.
@@ -74,5 +77,4 @@ set routing-options static route 0/0 next-hop ip-0/0/0.0
 ## Caveats
  - Covers only vendorid, product, version, capability and persistent token parameters. Authentication is not implemented.
  - Access sequence is a bit different from the specification (c.2 and c.3 is not implemented, wait 10-30 minutes even if failed with the errors.).
- - Currently, MX series router doesn't support DHCPv6 client with autoconfig(RA) mode(statefull ia-pd only).
 
