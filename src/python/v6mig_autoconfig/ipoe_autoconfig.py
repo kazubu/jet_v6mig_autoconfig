@@ -15,6 +15,7 @@ import re
 from paho.mqtt import client as mqtt
 
 from jnpr.junos import Device
+from jnpr.junos.exception import RpcError
 import v6mig_autoconfig.v6mig.junos_utils as junos
 import v6mig_autoconfig.v6mig.v6mig as v6mig
 
@@ -291,7 +292,13 @@ def main():
     device.open()
 
     while True:
-        interface_address = junos.get_interface_address(device, external_interface)
+        try:
+            interface_address = junos.get_interface_address(device, external_interface)
+        except RpcError:
+            logger.error('Failed to get interface IPv6 address. Probablly, the interface is not yet found. Retrying...')
+            time.sleep(10)
+            continue
+
         if(interface_address == None):
             logger.error("Interface has no IPv6 address! Retrying...")
             time.sleep(5)
