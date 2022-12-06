@@ -44,6 +44,10 @@ MQTT_TIMEOUT = 180
 logger = getLogger(__name__)
 handlers = collections.defaultdict(set)
 
+ERR_NONE = 0
+ERR_DNS = 1
+ERR_PROV = 2
+
 ##
 next_update = None
 provisioned_ttl = None
@@ -57,6 +61,7 @@ insecure = False
 ipip_ifl = None
 token = None
 token_updated = False
+failure_reason = ERR_NONE
 
 ## MQTT
 def createCustomTopic(event_id = DEFAULT_TOPIC):
@@ -191,6 +196,9 @@ def update_configuration(device):
     global provisioned_ttl
     global token
     global token_updated
+    global failure_reason
+
+    failure_reason = ERR_NONE
 
     logger.info("Update process is started.")
     logger.debug("DNS Servers: %s" % ', '.join(dns_servers))
@@ -204,6 +212,7 @@ def update_configuration(device):
     else:
         logger.error("Failed to retrieve provisioning server.")
         # TODO: need to care next update timing for DNS failure.
+        failure_reason = ERR_DNS
         return False
 
     if(pd):
@@ -215,6 +224,7 @@ def update_configuration(device):
             token_updated = True
     else:
         logger.error("Failed to retrieve provisioning data.")
+        failure_reason = ERR_PROV
         return False
 
     if(len(aftr)):
@@ -233,6 +243,7 @@ def update_configuration(device):
         logger.debug("Generated configuration:\n%s", config)
     else:
         logger.error("Failed to retrieve AFTR IP address.")
+        failure_reason = ERR_PROV
         return False
 
     if(pd['ttl']):
@@ -249,6 +260,7 @@ def main():
     global dns_servers
     global insecure
     global token_updated
+    global failure_reason
 
     root_logger = getLogger()
 
@@ -346,7 +358,11 @@ def main():
                         token_updated = False
                     logger.info("Update is succeeded or not changed. Wait %s minutes for next update."% str(interval))
                 else:
-                    interval = random_interval(minimum = 10, maximum = 30)
+                    if failure_reason == ERR_DNS:
+                        interval = random_interval(minimum = 1, maximum = 10)
+                    else:
+                        interval = random_interval(minimum = 10, maximum = 30)
+
                     set_next_update(interval)
                     logger.info("Update is failed. Wait %s minutes for next update." % str(interval))
 
